@@ -17,22 +17,18 @@ class MyFrame(wx.Frame):
         self.static_bitmap2 = wx.StaticBitmap(panel, -1, self.bitmap2)
 
         # 获取屏幕尺寸和面板尺寸
-        screen_size = wx.DisplaySize()
-        panel_size = panel.GetSize()
+        size = self.GetClientSize()
+        element_size = self.static_bitmap1.GetSize()
 
         # 计算居中位置
-        center_x = (screen_size[0] - panel_size[0]) / 2
-        center_y = (screen_size[1] - panel_size[1]) / 2
+        x_pos = (size.width - element_size.width) // 2
+        y_pos = (size.height - element_size.height) // 2
 
         # 初始只显示第一张图片，隐藏第二张图片
         self.static_bitmap2.Hide()
 
-        # 获取屏幕尺寸和面板尺寸
-        screen_size = wx.DisplaySize()
-        panel_size = panel.GetSize()
-
-        self.static_bitmap1.SetPosition((center_x, center_y))
-        self.static_bitmap2.SetPosition((center_x, center_y))
+        self.static_bitmap1.SetPosition((x_pos, y_pos))
+        self.static_bitmap2.SetPosition((x_pos, y_pos))
 
         # 创建按钮并绑定事件
         button = wx.Button(panel, label='切换')
@@ -40,10 +36,12 @@ class MyFrame(wx.Frame):
 
         # 使用垂直方向的 BoxSizer 布局，将图片和按钮依次添加
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.static_bitmap1, 0, wx.ALL, 0)
+        sizer.Add(self.static_bitmap1, 0, wx.ALL | wx.CENTER, 0)
         sizer.Add(button, 0, wx.ALL | wx.CENTER, 10)
 
         panel.SetSizer(sizer)
+
+        self.Bind(wx.EVT_SIZE, self.on_resize)
 
     def on_button_click(self, event):
         if self.static_bitmap1.IsShown():
@@ -53,6 +51,33 @@ class MyFrame(wx.Frame):
             self.static_bitmap1.Show()
             self.static_bitmap2.Hide()
         self.Layout()
+
+    def on_resize(self, event):
+        size = self.GetClientSize()
+        element_size = self.static_bitmap1.GetSize()
+        x_pos = (size.width - element_size.width) // 2
+        y_pos = (size.height - element_size.height) // 2
+        self.static_bitmap1.SetPosition((x_pos, y_pos))
+        self.static_bitmap2.SetPosition((x_pos, y_pos))
+
+        # 计算高度最大时的宽度比例
+        aspect_ratio = self.image1.GetWidth() / self.image1.GetHeight()
+        new_height = size.GetHeight() - 50
+        new_width = new_height * aspect_ratio
+
+        resized_image = self.image1.Scale(int(new_width), int(new_height))
+        self.bitmap1 = wx.Bitmap(resized_image)
+        self.static_bitmap1.SetBitmap(self.bitmap1)
+        
+        self.bitmap2 = wx.Bitmap(resized_image)
+        self.static_bitmap2.SetBitmap(self.bitmap2)
+        
+        size = self.GetClientSize()
+        button_size = self.FindWindowByName('切换').GetSize()
+        x_pos = (size.width - button_size.width)
+        self.FindWindowByName('切换').SetPosition((x_pos, 20))
+
+        event.Skip()
 
 app = wx.App()
 frame = MyFrame()
